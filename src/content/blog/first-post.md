@@ -1,16 +1,106 @@
 ---
-title: 'First post'
-description: 'Lorem ipsum dolor sit amet'
-pubDate: 'Jul 08 2022'
+title: 'TypeScript枚举的告别与反思'
+description: '探讨TypeScript枚举（Enum）的争议与未来发展方向'
+pubDate: 'Mar 01 2025'
 heroImage: '/blog-placeholder-3.jpg'
 ---
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Vitae ultricies leo integer malesuada nunc vel risus commodo viverra. Adipiscing enim eu turpis egestas pretium. Euismod elementum nisi quis eleifend quam adipiscing. In hac habitasse platea dictumst vestibulum. Sagittis purus sit amet volutpat. Netus et malesuada fames ac turpis egestas. Eget magna fermentum iaculis eu non diam phasellus vestibulum lorem. Varius sit amet mattis vulputate enim. Habitasse platea dictumst quisque sagittis. Integer quis auctor elit sed vulputate mi. Dictumst quisque sagittis purus sit amet.
+##### TypeScript枚举的告别与反思
 
-Morbi tristique senectus et netus. Id semper risus in hendrerit gravida rutrum quisque non tellus. Habitasse platea dictumst quisque sagittis purus sit amet. Tellus molestie nunc non blandit massa. Cursus vitae congue mauris rhoncus. Accumsan tortor posuere ac ut. Fringilla urna porttitor rhoncus dolor. Elit ullamcorper dignissim cras tincidunt lobortis. In cursus turpis massa tincidunt dui ut ornare lectus. Integer feugiat scelerisque varius morbi enim nunc. Bibendum neque egestas congue quisque egestas diam. Cras ornare arcu dui vivamus arcu felis bibendum. Dignissim suspendisse in est ante in nibh mauris. Sed tempus urna et pharetra pharetra massa massa ultricies mi.
+> 原文链接：[https://blog.disintegrator.dev/posts/ode-to-typescript-enums/](https://blog.disintegrator.dev/posts/ode-to-typescript-enums/)  
+> 主题：不要再使用ts Enum
 
-Mollis nunc sed id semper risus in. Convallis a cras semper auctor neque. Diam sit amet nisl suscipit. Lacus viverra vitae congue eu consequat ac felis donec. Egestas integer eget aliquet nibh praesent tristique magna sit amet. Eget magna fermentum iaculis eu non diam. In vitae turpis massa sed elementum. Tristique et egestas quis ipsum suspendisse ultrices. Eget lorem dolor sed viverra ipsum. Vel turpis nunc eget lorem dolor sed viverra. Posuere ac ut consequat semper viverra nam. Laoreet suspendisse interdum consectetur libero id faucibus. Diam phasellus vestibulum lorem sed risus ultricies tristique. Rhoncus dolor purus non enim praesent elementum facilisis. Ultrices tincidunt arcu non sodales neque. Tempus egestas sed sed risus pretium quam vulputate. Viverra suspendisse potenti nullam ac tortor vitae purus faucibus ornare. Fringilla urna porttitor rhoncus dolor purus non. Amet dictum sit amet justo donec enim.
+##### 枚举（Enum）的争议
 
-Mattis ullamcorper velit sed ullamcorper morbi tincidunt. Tortor posuere ac ut consequat semper viverra. Tellus mauris a diam maecenas sed enim ut sem viverra. Venenatis urna cursus eget nunc scelerisque viverra mauris in. Arcu ac tortor dignissim convallis aenean et tortor at. Curabitur gravida arcu ac tortor dignissim convallis aenean et tortor. Egestas tellus rutrum tellus pellentesque eu. Fusce ut placerat orci nulla pellentesque dignissim enim sit amet. Ut enim blandit volutpat maecenas volutpat blandit aliquam etiam. Id donec ultrices tincidunt arcu. Id cursus metus aliquam eleifend mi.
+**社区趋势**  
+主流观点推荐优先使用字面量联合类型（如 `type X = "A" | "B"`），因其更轻量、符合人体工程学。
 
-Tempus quam pellentesque nec nam aliquam sem. Risus at ultrices mi tempus imperdiet. Id porta nibh venenatis cras sed felis eget velit. Ipsum a arcu cursus vitae. Facilisis magna etiam tempor orci eu lobortis elementum. Tincidunt dui ut ornare lectus sit. Quisque non tellus orci ac. Blandit libero volutpat sed cras. Nec tincidunt praesent semper feugiat nibh sed pulvinar proin gravida. Egestas integer eget aliquet nibh praesent tristique magna.
+**Enum独有优势**  
+1. **文档化支持**: Enum 成员可附加详细注释（包括 `@deprecated`），且 IDE 提示更直观
+2. **代码可维护性**: 在大型代码库中，Enum 的强类型和集中化管理更不易出错
+
+##### 字面量联合的局限性
+
+- 联合类型的成员无法单独注释，文档需写在类型定义处，导致上下文信息缺失
+- 示例对比：
+
+```typescript
+// Enum 支持成员级注释
+enum PaymentMethod {
+  /** @deprecated */
+  Check = "check"
+}
+
+// 联合类型注释集中在类型定义
+type PaymentMethod = "check" /** @deprecated */ | "credit" | "debit";
+```
+
+##### TypeScript 5.8 的变革
+
+- 引入 `--erasableSyntaxOnly` 编译标志，禁止使用 Enum 和 Namespace 等特性
+- 这些特性会被转译为 JS 对象，无法直接运行 TS 文件
+- Node.js v23、Deno、Bun 已支持无需构建步骤直接运行 TS，但需遵守 "可擦除语法" 规则
+
+##### 可擦除语法
+
+在 TypeScript 开发中，"可擦除语法"（Eraseable Syntax）是指那些在编译为 JavaScript 时可以被完全移除而不会影响运行时行为的语法特性。这是 Node.js v23、Deno、Bun 等运行时支持直接执行 TypeScript 代码的核心前提条件。以下是关键要点：
+
+**核心特征**
+
+无运行时影响：这些语法元素在编译为 JavaScript 后不会留下任何运行时痕迹，例如：
+- 类型注解：`let x: number = 1;` → `let x = 1;`
+- 接口/类型别名：`interface User { ... }` → 完全移除
+- 泛型参数：`function id<T>(x: T) { ... }` → `function id(x) { ... }`
+
+静态检查专用：这些语法仅用于 TypeScript 的类型检查阶段，不涉及 JavaScript 的运行时逻辑。
+
+**与非可擦除语法的对比**
+
+| 可擦除语法 | 非可擦除语法 |
+|----------|------------|
+| 类型注解 | 装饰器 |
+| 接口 | 枚举 |
+| 类型别名 | 命名空间 |
+| 泛型参数 | 实验性语法 |
+
+非可擦除语法需要生成额外的 JavaScript 代码或依赖运行时支持，因此无法直接执行。
+
+**运行时支持原理**
+
+即时转换（JIT Transpile）：运行时（如 Deno/Bun）内部通过快速转换工具（如 swc 或 esbuild）将 TypeScript 转换为 JavaScript，但仅处理可擦除语法。
+
+限制条件：若代码包含非可擦除语法（如装饰器），运行时可能：
+- 直接报错（默认行为）
+- 要求显式配置（如 Deno 需启用 `--unstable` 标志）
+
+**代码示例**
+
+可擦除语法（允许）：
+```typescript
+// 类型注解会被擦除
+function sum(a: number, b: number): number {
+  return a + b;
+}
+
+// 接口和泛型会被完全移除
+interface Result<T> {
+  data: T;
+}
+const res: Result<string> = { data: "ok" };
+```
+
+不可擦除语法（禁止或需额外配置）：
+```typescript
+// 装饰器需要生成运行时代码
+@Controller("/user")  // ❌ 报错（除非配置支持）
+class UserController {}
+
+// 枚举会生成 IIFE 代码
+enum Status {         // ❌ 可能报错
+  Success = 200
+}
+```
+
+##### 结语
+
+尽管 Enum 终将淡出，但其在工程实践中的优势值得被铭记，期待语言特性进一步演进。
